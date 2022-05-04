@@ -1,6 +1,6 @@
 dataset_type = 'OCRDataset'
 
-root = '../../data'
+root = '../../../data'
 img_prefix = f'{root}/imgs'
 train_anno_file1 = f'{root}/train.txt'
 

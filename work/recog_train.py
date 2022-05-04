@@ -6,19 +6,20 @@ from mmocr.models import build_detector
 from mmocr.apis import train_detector
 import os.path as osp
 
+
 def build_cfg():
-    cfg = Config.fromfile(osp.join(main_path,'configs/textdet/maskrcnn/mask_rcnn_r50_fpn_160e_icdar2017-stone.py'))
+    cfg = Config.fromfile(osp.join(main_path, 'configs/textrecog/sar/sar_r31_parallel_decoder_stone_dataset.py'))
 
     # 存放输出结果和日志的目录
-    cfg.work_dir = '.././demo/det'
+    cfg.work_dir = osp.join(main_path, 'demo/recog')
 
     # 初始学习率 0.001 是针对 8 个 GPU 训练的
     # 如果只有一个 GPU，则除以8
     cfg.optimizer.lr = 0.001 / 8
     cfg.lr_config.warmup = None
 
-    # 每训练40张图像，记录一次日志
-    cfg.log_config.interval = 40
+    # 每训练多少张图像，记录一次日志
+    cfg.log_config.interval = 1000
 
     # 设置随机数种子
     cfg.seed = 0
@@ -27,6 +28,7 @@ def build_cfg():
 
     print(cfg.pretty_text)
     return cfg
+
 
 def train(cfg):
     # 建立数据集
@@ -42,5 +44,5 @@ def train(cfg):
 
 if __name__ == '__main__':
     main_path = r'/home/featurize/work/mmocr'
-    cfg = build_cfg()
-    train(cfg)
+    config = build_cfg()
+    train(config)
