@@ -143,3 +143,5 @@ workdirs/
 .history/
 .dev/
 demo/
+work/outputs/
+work/save/
