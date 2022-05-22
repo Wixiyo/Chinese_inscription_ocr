@@ -81,7 +81,7 @@ def split_projection_list(projectionList: list, minValue=0):
     return split_list
 
 
-def cut_binary_img(binary_img, startX, startY, direction='horizontal', iteration=2):
+def cut_binary_img(binary_img, startX, startY, limit, direction='horizontal', iteration=2):
     img_h, img_w = binary_img.shape[:2]
     if iteration <= 0:
         return {
@@ -96,7 +96,7 @@ def cut_binary_img(binary_img, startX, startY, direction='horizontal', iteration
     # print(minValue)
     split_list = split_projection_list(projection_list, minValue)
     for start, end in split_list:
-        if end - start < 10:
+        if end - start < limit:
             continue
         if direction == 'horizontal':
             x, y, w, h = 0, start, img_w, end - start
@@ -108,7 +108,7 @@ def cut_binary_img(binary_img, startX, startY, direction='horizontal', iteration
             next_direction = 'vertical'
         else:
             next_direction = 'horizontal'
-        grandchildren = cut_binary_img(roi, startX + x, startY + y, next_direction, iteration - 1)
+        grandchildren = cut_binary_img(roi, startX + x, startY + y, limit, next_direction, iteration - 1)
 
         children.append(grandchildren)
 
@@ -142,6 +142,18 @@ def draw_rects(img, rects):
         cv2.rectangle(new_img, p1, p2, color, 2)
     return new_img
 
+def draw_rects_with_txt(img, txt):
+    image = cv2.imread(img)
+    f = open(txt)  # 返回一个文件对象
+    line = f.readline()  # 调用文件的 readline()方法
+    while line:
+        p1 = (int(line.split(',')[0]), int(line.split(',')[1]))
+        p2 = (int(line.split(',')[4]), int(line.split(',')[5]))
+        color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        cv2.rectangle(image, p1, p2, color, 2)
+        line = f.readline()
+    f.close()
+    return image
 
 def check_dir(save_path):
     if os.path.exists(save_path):
@@ -150,10 +162,12 @@ def check_dir(save_path):
     os.makedirs(os.path.join(save_path, "result"))
 
 
-def cutter(image, point_coords, save_path):
+def line_cutter(path, img_name, point_coords, save_path, txt):
+    image = cv2.imread(os.path.join(path, img_name))
     max_x, max_y = np.amax(point_coords, axis=0)
     min_x, min_y = np.amin(point_coords, axis=0)
     tmp = image[min_y:max_y, min_x: max_x]
+    limit = min(max_x - min_x, max_y - min_y)/5
 
     ########################################
     vec = [-min_x, -min_y]
@@ -197,9 +211,10 @@ def cutter(image, point_coords, save_path):
 
     H = 'horizontal'
     V = 'vertical'
-    root = cut_binary_img(erode_img, 0, 0, direction=V, iteration=3)
+    root = cut_binary_img(erode_img, 0, 0, limit, direction=V, iteration=3)
 
     rects = get_leaf_node(root)
+
     for each in rects:
         char = image[each[1] + min_y: each[1] + min_y + each[3],
                each[0] + min_x: each[0] + min_x + each[2]]
@@ -207,25 +222,21 @@ def cutter(image, point_coords, save_path):
         name = os.path.join(save_path, 'intermediate', num + '.png')
         cv2.imwrite(name, char)
 
-    # new_img = draw_rects(img, rects)
-    # # get_projection_list_demo(binary_img)
-    # cv2.imshow('new_img', new_img)
-    # cv2.imshow('src', img)
-    # cv2.imshow('erode_img', erode_img)
-    # cv2.imshow('binary_img', binary_img)
-    # cv2.waitKey(0)
+
+        x1 = each[0] + min_x
+        y1 = each[1] + min_y
+        x2 = each[0] + min_x + each[2]
+        y2 = y1
+        x3 = x2
+        y3 = each[1] + min_y + each[3]
+        x4 = x1
+        y4 = y3
+        string = str(x1) + ',' + str(y1) + ',' + str(x2) + ',' + str(y2) \
+                 + ',' + str(x3) + ',' + str(y3) + ',' + str(x4) + ',' + str(y4) \
+                 + ',' + str(0) + ',' + 'text' + '\n'
+        txt.write(string)
 
 
-if __name__ == "__main__":
-    point_coords = [[1629, 1713],
-                    [1639, 1611],
-                    [2303, 1679],
-                    [2292, 1781]]
-    point_coords = np.array(point_coords)
-    img_path = 'test/2 (473).JPG'
-    save_path = 'test/save'
-    image = cv2.imread(img_path)
-    cutter(image,point_coords,save_path)
 
 
 
